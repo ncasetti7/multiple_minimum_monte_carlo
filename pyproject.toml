@@ -1,6 +1,6 @@
 [project]
 name = "multiple-minimum-monte-carlo"
-version = "0.1.0"
+version = "0.1.1"
 description = "Open source implementation of multiple minimum Monte Carlo"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -28,4 +28,4 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = { find = {} }
+packages = { find = { exclude = ["tests*"] } }
