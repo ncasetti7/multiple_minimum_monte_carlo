@@ -1,0 +1,12 @@
+# All __pycache__ directories
+**/__pycache__
+
+# All .egg-info folders
+**/*.egg-info
+
+# All .ruff_cache folders
+**/*.ruff_cache
+
+# Extra cache/environment folder
+.pytest_cache/
+.venv/
