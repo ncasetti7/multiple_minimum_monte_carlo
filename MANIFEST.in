@@ -1,3 +1,0 @@
-include LICENSE
-include README.md
-recursive-include multiple_minimum_monte_carlo *.py
