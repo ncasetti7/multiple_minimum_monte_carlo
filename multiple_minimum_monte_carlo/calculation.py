@@ -60,5 +60,14 @@ class ASEOptimization(Calculation):
         return atoms.get_positions(), atoms.get_potential_energy() * EV_TO_KCAL
     
     def energy(self, atoms: ase.Atoms) -> float:
+        """
+        Return the energy of the input atoms object
+
+        Args:
+            atoms (ase.Atoms): Input atoms object
+
+        Returns:
+            energy (float): Energy of the atoms object
+        """
         atoms.calc = self.calc
         return atoms.get_potential_energy() * EV_TO_KCAL

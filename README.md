@@ -1,6 +1,8 @@
-# Multiple Minimumum Monte Carlo
+# Multiple Minimum Monte Carlo
+[![pypi](https://img.shields.io/pypi/v/multiple-minimum-monte-carlo.svg)](https://pypi.python.org/pypi/multiple-minimum-monte-carlo)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json)](https://github.com/charliermarsh/ruff)
 
-This package will help you perform a multiple minumum Monte Carlo conformer search as described in (CITATION). It is built to be used with an ASE calculator and ASE optimization tools but user-defined optimization strategies can be employed as well.
+This package will help you perform a multiple minumum Monte Carlo conformer search as described in [Chang et al., 1989](https://doi.org/10.1021/ja00194a035). It is built to be used with an ASE calculator and ASE optimization tools but user-defined optimization strategies can be employed as well.
 
 ### Installation
 
@@ -45,3 +47,7 @@ write("lowest_energy_conformer.xyz", conformer.atoms, format="xyz")
 ### User-Defined Calculation
 
 To define a Calculation object, a class will need three function: init, run, and energy. init initializes the class with whatever information is necessary. run performs an optimization. It takes an ase.Atoms object and a list of atoms to constrain and returns an np array of cartesian coordinates (in angstroms) and a float with the energy of the conformation (in kcal/mol). energy calculates the energy of a conformer. It takes an ase.Atoms object and returns a float the with energy (in kcal/mol)
+
+### Planned future work
+
+Include support for batched optimization 

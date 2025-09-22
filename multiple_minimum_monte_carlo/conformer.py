@@ -59,11 +59,17 @@ class Conformer():
         self.atoms.info['spin'] = self.spin
 
     def generate_conformer(self) -> None:
+        """
+        Generate a conformer with rdkit ETKDG
+        """
         AllChem.EmbedMolecule(self.mol)
         AllChem.UFFOptimizeMolecule(self.mol)
         self.atoms = cheminformatics.mol_to_ase_atoms(self.mol)
 
     def mol_from_xyz(self) -> Chem.Mol:
+        """
+        Generate an rdkit mol from an xyz file
+        """
         raw_mol = Chem.MolFromXYZFile(self.input_xyz)
         mol = Chem.Mol(raw_mol)
         rdDetermineBonds.DetermineBonds(mol,charge=self.charge)

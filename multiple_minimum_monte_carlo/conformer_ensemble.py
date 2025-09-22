@@ -34,8 +34,8 @@ class ConformerEnsemble():
                  reduce_angle: Optional[bool] = False,
                  reduce_angle_every: Optional[int] = 50,
                  reduce_angle_by: Optional[int] = 2,
-                 only_heavy: Optional[bool] = True,
-                 parallel: Optional[bool] = True,
+                 only_heavy: Optional[bool] = False,
+                 parallel: Optional[bool] = False,
                  num_cpus: Optional[int] = 0,
                  verbose: Optional[bool] = False
                  ) -> None:
@@ -47,19 +47,19 @@ class ConformerEnsemble():
                 num_iterations (int, optional): Number of Monte Carlo iterations to perform. Default is 100.
                 energy_window (float, optional): Maximum energy window (in eV) above the minimum energy conformer to retain conformers. Default is 10.0.
                 max_bonds_rotate (int, optional): Maximum number of rotatable bonds to rotate in each step. Default is 3.
-                max_attempts (int, optional): 
+                max_attempts (int, optional): Maximum number of times to try and rotate dihedrals per iteration. Default is 1000
                 angle_step (float, optional): Step size (in degrees) for bond rotation. Default is 30.0.
                 energy_threshold (float, optional): Energy threshold (in eV) for accepting new conformers. Default is 1.0.
                 rmsd_threshold (float, optional): RMSD threshold (in Å) for distinguishing unique conformers. Default is 0.3.
-                initial_optimziation (bool, optional):
+                initial_optimziation (bool, optional): If True, perform a structure optimization before performin Monte Carlo. Default is True
                 random_walk (bool, optional): If True, use random walk for bond rotations. Default is False.
                 reduce_angle (bool, optional): If True, reduce angle step size during the search. Default is False.
-                reduce_angle_every (int, optional): 
-                reduce_angle_by (int, optional):
+                reduce_angle_every (int, optional): The number of iterations between reducing angle step size. Default is 50 (only accessed when reduce_angle is True)
+                reduce_angle_by (int, optional): The amount to divide the angle step size by. Default is 2 (only accessed when reduce_angle is True)
                 only_heavy (bool, optional): If True, only rotate dihedrals associated with heavy atoms
-                parallel (bool, optional): If True, perform calculations in parallel. Default is True.
+                parallel (bool, optional): If True, perform calculations in parallel. Default is False
                 num_cpus (int, optional): Number of CPUs to use for parallel calculations. If 0, use all available CPUs. Default is 0.
-                verbose (bool, optional)
+                verbose (bool, optional): Whether to log Monte Carlo progress
         """
         self.conformer = conformer
         self.calc = calc
@@ -86,7 +86,12 @@ class ConformerEnsemble():
         if self.verbose:
             logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-    def log_info(self, message):
+    def log_info(self, message: str) -> None:
+        """
+        Logs a message
+        Args:
+            message (str): Message to log
+        """
         if self.verbose:
             logging.info(message)
 
