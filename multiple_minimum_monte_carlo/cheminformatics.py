@@ -1,4 +1,4 @@
-""""Module for handling cheminformatics tasks"""
+""" "Module for handling cheminformatics tasks"""
 
 from typing import List, Tuple
 import math
@@ -9,8 +9,9 @@ from ase import Atoms
 from ase.geometry.analysis import Analysis
 import numpy as np
 
+
 def make_mol(smi: str) -> Chem.Mol:
-    '''
+    """
     Initialize a rdkit molecule from a SMILES string while preserving atom mapping
 
     Args:
@@ -18,7 +19,7 @@ def make_mol(smi: str) -> Chem.Mol:
 
     Returns:
         mol: rdkit.Chem.Mol
-    '''
+    """
     ps = Chem.SmilesParserParams()
     ps.removeHs = False
     og = Chem.MolFromSmiles(smi, ps)
@@ -32,15 +33,16 @@ def make_mol(smi: str) -> Chem.Mol:
     mol = Chem.RenumberAtoms(og, indices_order)
     return mol
 
+
 def mol_to_ase_atoms(mol: Chem.Mol) -> Atoms:
     """
     Converts an RDKit molecule object to an ASE Atoms object.
-    
+
     Args:
         mol : Chem.Mol, An RDKit molecule object with 3D coordinates (conformer).
 
     Returns:
-        atoms: ase.Atoms, An ase atoms object 
+        atoms: ase.Atoms, An ase atoms object
     """
 
     symbols = [atom.GetSymbol() for atom in mol.GetAtoms()]
@@ -48,6 +50,7 @@ def mol_to_ase_atoms(mol: Chem.Mol) -> Atoms:
     positions = mol.GetConformer().GetPositions()
     atoms = Atoms(symbols=symbols, positions=np.array(positions))
     return atoms
+
 
 def add_ase_coords_to_mol(atoms: Atoms, mol: Chem.Mol) -> Chem.Mol:
     """
@@ -69,6 +72,7 @@ def add_ase_coords_to_mol(atoms: Atoms, mol: Chem.Mol) -> Chem.Mol:
         conf.SetAtomPosition(i, pos)
     return mol
 
+
 def add_coords_to_mol(coords: np.array, mol: Chem.Mol) -> Chem.Mol:
     if len(coords) != mol.GetNumAtoms():
         raise ValueError("Number of atoms in ASE Atoms and RDKit Mol do not match.")
@@ -76,6 +80,7 @@ def add_coords_to_mol(coords: np.array, mol: Chem.Mol) -> Chem.Mol:
     for i, pos in enumerate(coords):
         conf.SetAtomPosition(i, pos)
     return mol
+
 
 def get_bonds(mol: Chem.Mol) -> List[Tuple]:
     """
@@ -98,6 +103,7 @@ def get_bonds(mol: Chem.Mol) -> List[Tuple]:
             bonds.add((atom_2, atom_1))
 
     return bonds
+
 
 def get_dihedral_matches(mol: Chem.Mol, heavy: bool) -> List[Tuple[int, int, int, int]]:
     """
@@ -128,7 +134,7 @@ def get_dihedral_matches(mol: Chem.Mol, heavy: bool) -> List[Tuple[int, int, int
     # these are all sets of 4 atoms, uniquify by middle two
     uniqmatches = []
     seen = set()
-    for (a, b, c, d) in matches:
+    for a, b, c, d in matches:
         if (b, c) not in seen and (c, b) not in seen:
             if heavy:
                 if (
@@ -149,7 +155,11 @@ def get_dihedral_matches(mol: Chem.Mol, heavy: bool) -> List[Tuple[int, int, int
     return uniqmatches
 
 
-def rotate_dihedrals(conformer: Chem.rdchem.Conformer, dihedrals: List[Tuple[int, int, int, int]], stepsize: float) -> None:
+def rotate_dihedrals(
+    conformer: Chem.rdchem.Conformer,
+    dihedrals: List[Tuple[int, int, int, int]],
+    stepsize: float,
+) -> None:
     """
     Applies a random rotation to all the dihedrals
 
@@ -169,13 +179,14 @@ def rotate_dihedrals(conformer: Chem.rdchem.Conformer, dihedrals: List[Tuple[int
         rad = math.pi * rad_ang / 180.0
         rdMolTransforms.SetDihedralRad(conformer, *dihedral, value=rad)
 
+
 def get_bonded_atoms(mol: Chem.Mol) -> List[Tuple[int, int]]:
     """
     Get the indices of bonded atoms in the molecule.
 
     Args:
     mol: Chem.Mol, An RDKit molecule object
-    
+
     Returns:
     list: List of indices of bonded atoms.
     """
@@ -187,6 +198,7 @@ def get_bonded_atoms(mol: Chem.Mol) -> List[Tuple[int, int]]:
 
     return bonded_atoms
 
+
 def get_metal_atoms(mol: Chem.Mol) -> List[int]:
     """
     Get the indices of metal atoms in the reactant molecule.
@@ -194,19 +206,60 @@ def get_metal_atoms(mol: Chem.Mol) -> List[int]:
     Returns:
     list: List of indices of metal atoms.
     """
-    metal_list = ['Al', 'Sb', 'Ag', 'As', 'Ba', 'Be', 'Bi', 'Cd', 'Ca', 'Cr', 'Co', 'Cu', 'Au', 'Fe', 
-              'Pb', 'Mg', 'Mn', 'Hg', 'Mo', 'Ni', 'Pd', 'Pt', 'K', 'Rh', 'Rb', 'Ru', 'Sc', 'Ag', 
-              'Na', 'Sr', 'Ta', 'Tl', 'Th', 'Ti', 'U', 'V', 'Y', 'Zn', 'Zr']
+    metal_list = [
+        "Al",
+        "Sb",
+        "Ag",
+        "As",
+        "Ba",
+        "Be",
+        "Bi",
+        "Cd",
+        "Ca",
+        "Cr",
+        "Co",
+        "Cu",
+        "Au",
+        "Fe",
+        "Pb",
+        "Mg",
+        "Mn",
+        "Hg",
+        "Mo",
+        "Ni",
+        "Pd",
+        "Pt",
+        "K",
+        "Rh",
+        "Rb",
+        "Ru",
+        "Sc",
+        "Ag",
+        "Na",
+        "Sr",
+        "Ta",
+        "Tl",
+        "Th",
+        "Ti",
+        "U",
+        "V",
+        "Y",
+        "Zn",
+        "Zr",
+    ]
     metal_atoms = []
 
     for atom in mol.GetAtoms():
         if atom.GetSymbol() in metal_list:
             metal_atoms.append(atom.GetIdx())
-    
+
     return metal_atoms
 
-def initialize_mc_identity_check(atoms: Atoms, original_mol: Chem.Mol) -> Tuple[List, List, List]:
-    '''
+
+def initialize_mc_identity_check(
+    atoms: Atoms, original_mol: Chem.Mol
+) -> Tuple[List, List, List]:
+    """
     Initialize the identity check for the Monte Carlo conformer
 
     Args:
@@ -215,10 +268,14 @@ def initialize_mc_identity_check(atoms: Atoms, original_mol: Chem.Mol) -> Tuple[
 
     Returns:
         tuple: Set of bonds in the original molecule, indices of metal atoms, indices of halide atoms
-    '''
+    """
     metal_atoms = get_metal_atoms(original_mol)
     metal_atoms = [atom for atom in metal_atoms]
-    halides = [atom.GetIdx() for atom in original_mol.GetAtoms() if atom.GetSymbol() in ['F', 'Cl', 'Br', 'I']]
+    halides = [
+        atom.GetIdx()
+        for atom in original_mol.GetAtoms()
+        if atom.GetSymbol() in ["F", "Cl", "Br", "I"]
+    ]
     original_bonds = []
     ana = Analysis(atoms)
     bonds = ana.all_bonds
@@ -232,19 +289,22 @@ def initialize_mc_identity_check(atoms: Atoms, original_mol: Chem.Mol) -> Tuple[
                         original_bonds.append((i, atom))
     return original_bonds, metal_atoms, halides
 
-def check_identity_mc(original_bonds: List, metal_atoms: List, halide_atoms: List, atoms: Atoms) -> bool:
-    '''
+
+def check_identity_mc(
+    original_bonds: List, metal_atoms: List, halide_atoms: List, atoms: Atoms
+) -> bool:
+    """
     Check if the monte carlo conformer corresponds to the input molecule
 
     Args:
         original_bonds (list): Set of bonds in the original molecule
         metal_atoms (list): List of indices of metal atoms in the original molecule
         halide_atoms (list): List of indices of halide atoms in the original molecule
-        atoms (ase.Atoms): 
+        atoms (ase.Atoms):
 
     Returns:
         bool: True if the conformer corresponds to the input molecule, False otherwise
-    '''
+    """
     ana = Analysis(atoms)
     bonds = ana.all_bonds
     mc_bonds = []

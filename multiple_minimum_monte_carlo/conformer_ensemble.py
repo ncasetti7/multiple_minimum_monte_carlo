@@ -14,31 +14,34 @@ from multiple_minimum_monte_carlo.conformer import Conformer
 from multiple_minimum_monte_carlo.calculation import Calculation
 from multiple_minimum_monte_carlo import cheminformatics, multiproc
 
+
 def run_class_func(cls, func_name, args):
     func = getattr(cls, func_name)
     return func(**args)
 
-class ConformerEnsemble():
-    def __init__(self,
-                 conformer: Conformer,
-                 calc: Calculation,
-                 num_iterations: Optional[int] = 100,
-                 energy_window: Optional[float] = 10.0,
-                 max_bonds_rotate: Optional[int] = 3,
-                 max_attempts: Optional[int] = 1000,
-                 angle_step: Optional[float] = 30.0,
-                 energy_threshold: Optional[float] = 1.0,
-                 rmsd_threshold: Optional[float] = 0.3,
-                 initial_optimization: Optional[bool] = True,
-                 random_walk: Optional[bool] = False,
-                 reduce_angle: Optional[bool] = False,
-                 reduce_angle_every: Optional[int] = 50,
-                 reduce_angle_by: Optional[int] = 2,
-                 only_heavy: Optional[bool] = False,
-                 parallel: Optional[bool] = False,
-                 num_cpus: Optional[int] = 0,
-                 verbose: Optional[bool] = False
-                 ) -> None:
+
+class ConformerEnsemble:
+    def __init__(
+        self,
+        conformer: Conformer,
+        calc: Calculation,
+        num_iterations: Optional[int] = 100,
+        energy_window: Optional[float] = 10.0,
+        max_bonds_rotate: Optional[int] = 3,
+        max_attempts: Optional[int] = 1000,
+        angle_step: Optional[float] = 30.0,
+        energy_threshold: Optional[float] = 1.0,
+        rmsd_threshold: Optional[float] = 0.3,
+        initial_optimization: Optional[bool] = True,
+        random_walk: Optional[bool] = False,
+        reduce_angle: Optional[bool] = False,
+        reduce_angle_every: Optional[int] = 50,
+        reduce_angle_by: Optional[int] = 2,
+        only_heavy: Optional[bool] = False,
+        parallel: Optional[bool] = False,
+        num_cpus: Optional[int] = 0,
+        verbose: Optional[bool] = False,
+    ) -> None:
         """
         Initializes the conformer ensemble generator.
             Args:
@@ -104,7 +107,7 @@ class ConformerEnsemble():
             3. Iteratively samples conformers, applies random dihedral rotations, and optimizes the resulting structures.
             4. Filters out high-energy and duplicate conformers.
             5. Sorts the ensemble by energy and returns the final set of unique, low-energy conformers.
-        
+
         Returns
         -------
         List[np.ndarray]
@@ -113,18 +116,25 @@ class ConformerEnsemble():
         # Run the initial optimization
         if self.initial_optimization:
             self.log_info("Running intitial optimization")
-            positions, energy = self.calc.run(self.conformer.atoms, self.conformer.constrained_atoms)
+            positions, energy = self.calc.run(
+                self.conformer.atoms, self.conformer.constrained_atoms
+            )
             self.conformer.atoms.positions = positions
         else:
             energy = self.calc.energy(self.conformer.atoms)
         # Get the dihedrals to rotate
-        dihedrals = cheminformatics.get_dihedral_matches(self.conformer.mol, self.only_heavy)
+        dihedrals = cheminformatics.get_dihedral_matches(
+            self.conformer.mol, self.only_heavy
+        )
         self.max_bonds_rotate = min(len(dihedrals), self.max_bonds_rotate)
 
         # Remove any dihedrals associated with constrained atoms
         final_dihedrals = []
         for dihedral in dihedrals:
-            if dihedral[1] in self.conformer.constrained_atoms and dihedral[2] in self.conformer.constrained_atoms:
+            if (
+                dihedral[1] in self.conformer.constrained_atoms
+                and dihedral[2] in self.conformer.constrained_atoms
+            ):
                 # If the bond is constrained, we need to remove it from the list of rotatable bonds
                 continue
             else:
@@ -133,51 +143,71 @@ class ConformerEnsemble():
 
         # Initialize information for identity checking
         # TODO: halides are weird with bond formation occasionally so they are currently gnore
-        self.original_bonds, self.metal_atoms, self.halides = cheminformatics.initialize_mc_identity_check(self.conformer.atoms, self.conformer.mol)
+        self.original_bonds, self.metal_atoms, self.halides = (
+            cheminformatics.initialize_mc_identity_check(
+                self.conformer.atoms, self.conformer.mol
+            )
+        )
 
         final_ensemble = [self.conformer.atoms.get_positions()]
         final_energies = [energy]
         used = [0]
         current_iter = 0
         while current_iter < self.num_iterations:
-            self.log_info(f"Iteration: {current_iter} Current min energy: {min(final_energies)}")
+            self.log_info(
+                f"Iteration: {current_iter} Current min energy: {min(final_energies)}"
+            )
             # Reduce angle if reduce_angle true
             if self.reduce_angle:
                 if iter % self.reduce_angle_every == 0:
                     self.angle_step = self.angle_step / self.reduce_angle_by
-            
+
             # Sample a conformer, rotate its dihedrals, and optimize it (if parallel, do this num_cpus times)
             calculation_input = []
             for _ in range(self.num_cpus):
                 current_iter += 1
                 success = False
                 index = self.sample_conformer(used)
-                success, positions = self.modify_conformer(final_ensemble[index], dihedrals)
+                success, positions = self.modify_conformer(
+                    final_ensemble[index], dihedrals
+                )
                 if success:
                     used[index] += 1
                     atoms_to_optimize = copy(self.conformer.atoms)
                     atoms_to_optimize.set_positions(positions)
-                    calculation_input.append({"cls": self.calc, 
-                                              "func_name": "run", 
-                                              "args": {"atoms": atoms_to_optimize, 
-                                                       "constrained_atoms": self.conformer.constrained_atoms}})
+                    calculation_input.append(
+                        {
+                            "cls": self.calc,
+                            "func_name": "run",
+                            "args": {
+                                "atoms": atoms_to_optimize,
+                                "constrained_atoms": self.conformer.constrained_atoms,
+                            },
+                        }
+                    )
             if len(calculation_input) == 0:
                 continue
-            positions_and_energies = multiproc.parallel_run_proc(run_class_func, calculation_input, self.num_cpus)
-            
+            positions_and_energies = multiproc.parallel_run_proc(
+                run_class_func, calculation_input, self.num_cpus
+            )
+
             # Filter out high energy and duplicate conformers
             for positions, energy in positions_and_energies:
-                if self.check_conformer(final_ensemble, final_energies, positions, energy):
+                if self.check_conformer(
+                    final_ensemble, final_energies, positions, energy
+                ):
                     final_ensemble.append(positions)
                     final_energies.append(energy)
                     used.append(0)
 
             # Sort all of the lists by energies
-            final_ensemble, used, final_energies = zip(*sorted(zip(final_ensemble, used, final_energies), key=lambda x: x[2]))
+            final_ensemble, used, final_energies = zip(
+                *sorted(zip(final_ensemble, used, final_energies), key=lambda x: x[2])
+            )
             final_ensemble = list(final_ensemble)
             used = list(used)
             final_energies = list(final_energies)
-        
+
         return final_ensemble
 
     def sample_conformer(self, used: List[int]) -> int:
@@ -196,7 +226,9 @@ class ConformerEnsemble():
             index = np.argmin(np.array(used))
         return index
 
-    def modify_conformer(self, conformer: np.ndarray, all_dihedrals: List[Tuple[int, int, int, int]]) -> Tuple[bool, np.ndarray]:
+    def modify_conformer(
+        self, conformer: np.ndarray, all_dihedrals: List[Tuple[int, int, int, int]]
+    ) -> Tuple[bool, np.ndarray]:
         """
         Attempts to modify a given conformer by randomly rotating a subset of its dihedral angles.
         For a maximum number of attempts (`self.max_attempts`), this method:
@@ -209,7 +241,7 @@ class ConformerEnsemble():
             conformer (np.ndarray): The input conformer coordinates to be modified.
             all_dihedrals (List[Tuple[int, int, int, int]]): List of all possible dihedral angles (as atom index tuples) in the molecule.
         Returns:
-            Tuple[bool, np.ndarray]: 
+            Tuple[bool, np.ndarray]:
                 - A boolean indicating whether a valid conformer was found.
                 - The resulting np.ndarray with the coordinates of the modified conformer.
         """
@@ -219,7 +251,9 @@ class ConformerEnsemble():
             temp_mol = cheminformatics.add_coords_to_mol(conformer, temp_mol)
             num_dihedrals = random.randint(1, self.max_bonds_rotate)
             dihedrals = random.choices(all_dihedrals, k=num_dihedrals)
-            cheminformatics.rotate_dihedrals(temp_mol.GetConformer(), dihedrals, self.angle_step)
+            cheminformatics.rotate_dihedrals(
+                temp_mol.GetConformer(), dihedrals, self.angle_step
+            )
             if self.constraint_test(temp_mol.GetConformer()):
                 success = True
                 break
@@ -229,7 +263,7 @@ class ConformerEnsemble():
     def constraint_test(self, conf: Chem.rdchem.Conformer) -> bool:
         """
         Determine whether the conformer meets the constraint test 2 as defined in CITATION.
-        This function checks whether the interatomic distances between non-bonded atoms is under 1/4 of the 
+        This function checks whether the interatomic distances between non-bonded atoms is under 1/4 of the
         van der Waals radius of the atoms. If the distance is under this threshold, the conformer is considered invalid.
 
         Parameters
@@ -246,9 +280,17 @@ class ConformerEnsemble():
         # Calculate the distance matrix between all pairs of atoms
         dist_matrix = distance_matrix(coords, coords)
         # Get the van der Waals radii for each atom in the conformer
-        vdw_radii = [PeriodicTable.GetRvdw(Chem.GetPeriodicTable(), atom.GetAtomicNum()) for atom in self.conformer.mol.GetAtoms()]
+        vdw_radii = [
+            PeriodicTable.GetRvdw(Chem.GetPeriodicTable(), atom.GetAtomicNum())
+            for atom in self.conformer.mol.GetAtoms()
+        ]
         # Make a matrix of the van der Waals radii
-        vdw_matrix = np.array([[vdw_radii[i] + vdw_radii[j] for j in range(len(vdw_radii))] for i in range(len(vdw_radii))])
+        vdw_matrix = np.array(
+            [
+                [vdw_radii[i] + vdw_radii[j] for j in range(len(vdw_radii))]
+                for i in range(len(vdw_radii))
+            ]
+        )
         vdw_matrix = vdw_matrix / 4.0  # Scale the van der Waals radii by 1/4
         # Set the distances between bonded atoms to zero (to ignore them in the test)
         for bonded_atom_pair in self.conformer.bonded_atoms:
@@ -264,11 +306,14 @@ class ConformerEnsemble():
             return False
         # If all distances are greater than or equal to 0, the conformer passes the constraint test
         return True
-    
-    def check_conformer(self, ensemble: List[np.ndarray], 
-                        energies: List[float], 
-                        conf: np.ndarray, 
-                        energy: float) -> bool:
+
+    def check_conformer(
+        self,
+        ensemble: List[np.ndarray],
+        energies: List[float],
+        conf: np.ndarray,
+        energy: float,
+    ) -> bool:
         """
         Checks whether a given conformer should be added to the ensemble based on energy and structural similarity.
         This function evaluates if the provided conformer (`conf`) with its associated energy (`energy`) is sufficiently low in energy
@@ -288,14 +333,18 @@ class ConformerEnsemble():
             return False
         temp_atoms = copy(self.conformer.atoms)
         temp_atoms.set_positions(conf)
-        if not cheminformatics.check_identity_mc(self.original_bonds, self.metal_atoms, self.halides, temp_atoms):
+        if not cheminformatics.check_identity_mc(
+            self.original_bonds, self.metal_atoms, self.halides, temp_atoms
+        ):
             return False
         temp_mol = copy(self.conformer.mol)
         temp_mol = cheminformatics.add_coords_to_mol(conf, temp_mol)
         temp_reference_mol = copy(self.conformer.mol)
-        atom_map = [(i,i) for i in range(len(temp_mol.GetAtoms()))]
+        atom_map = [(i, i) for i in range(len(temp_mol.GetAtoms()))]
         for reference_conf in ensemble:
-            temp_reference_mol = cheminformatics.add_coords_to_mol(reference_conf, temp_reference_mol)
+            temp_reference_mol = cheminformatics.add_coords_to_mol(
+                reference_conf, temp_reference_mol
+            )
             rmsd = rdMolAlign.AlignMol(temp_mol, temp_reference_mol, atomMap=atom_map)
             if rmsd < self.rmsd_threshold:
                 return False

@@ -12,30 +12,38 @@ from ase.constraints import FixAtoms
 
 EV_TO_KCAL = 23.0605
 
-class Calculation():
+
+class Calculation:
     def __init__(self):
         pass
 
-    def run(self, atoms : ase.Atoms, constrained_atoms : Optional[List[int]] = []) -> Tuple[np.ndarray, float]:
+    def run(
+        self, atoms: ase.Atoms, constrained_atoms: Optional[List[int]] = []
+    ) -> Tuple[np.ndarray, float]:
         pass
 
     def energy(self, atoms: ase.Atoms) -> float:
         pass
 
+
 class ASEOptimization(Calculation):
-    def __init__(self,
-                 calc: ase.calculators.calculator.Calculator,
-                 optimizer: Optional[ase.optimize.optimize.Optimizer] = BFGS, 
-                 fmax: Optional[float] = 0.01, 
-                 max_cycles: Optional[float] = 1000, 
-                 verbose: Optional[float] = False) -> None:
+    def __init__(
+        self,
+        calc: ase.calculators.calculator.Calculator,
+        optimizer: Optional[ase.optimize.optimize.Optimizer] = BFGS,
+        fmax: Optional[float] = 0.01,
+        max_cycles: Optional[float] = 1000,
+        verbose: Optional[float] = False,
+    ) -> None:
         self.calc = calc
         self.optimizer = optimizer
         self.fmax = fmax
         self.max_cycles = max_cycles
         self.verbose = verbose
 
-    def run(self, atoms : ase.Atoms, constrained_atoms : Optional[List[int]] = []) -> Tuple[ase.Atoms, float]:
+    def run(
+        self, atoms: ase.Atoms, constrained_atoms: Optional[List[int]] = []
+    ) -> Tuple[ase.Atoms, float]:
         """
         Perform constrained optimization using ASE.
 
@@ -54,11 +62,13 @@ class ASEOptimization(Calculation):
             opt = self.optimizer(atoms)
             opt.run(fmax=self.fmax, steps=self.max_cycles)
         else:
-            with open(os.devnull, "w", encoding='utf-8') as f, contextlib.redirect_stdout(f):
+            with open(
+                os.devnull, "w", encoding="utf-8"
+            ) as f, contextlib.redirect_stdout(f):
                 opt = self.optimizer(atoms)
                 opt.run(fmax=self.fmax, steps=self.max_cycles)
         return atoms.get_positions(), atoms.get_potential_energy() * EV_TO_KCAL
-    
+
     def energy(self, atoms: ase.Atoms) -> float:
         """
         Return the energy of the input atoms object
