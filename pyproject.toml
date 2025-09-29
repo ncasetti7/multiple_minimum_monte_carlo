@@ -16,6 +16,7 @@ license = { file = "LICENSE" }
 
 [dependency-groups]
 dev = [
+    "build>=1.2.2.post1",
     "ipykernel",
     "pytest",
     "ruff",
