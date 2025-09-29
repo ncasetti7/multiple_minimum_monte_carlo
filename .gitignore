@@ -10,3 +10,4 @@
 # Extra cache/environment folder
 .pytest_cache/
 .venv/
+dist/
