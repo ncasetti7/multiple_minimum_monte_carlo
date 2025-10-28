@@ -2,9 +2,9 @@
 
 import os
 from typing import List, Dict, Callable
-import torch.multiprocessing as mp
-import torch
+import multiprocessing as mp
 import math
+import ctypes
 
 
 def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
@@ -48,6 +48,36 @@ def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
 
     return batched_dicts
 
+def limit_cpu_threads(n_threads: int = 1):
+    """
+    Rough equivalent of torch.set_num_threads(n_threads)
+    without importing PyTorch.
+
+    It limits OpenMP, MKL, OpenBLAS, and BLIS threads globally.
+    Call this before starting multiprocessing or heavy numeric code.
+    """
+    n_str = str(n_threads)
+    
+    # Common math library environment variables
+    os.environ["OMP_NUM_THREADS"] = n_str       # OpenMP
+    os.environ["OPENBLAS_NUM_THREADS"] = n_str  # OpenBLAS
+    os.environ["MKL_NUM_THREADS"] = n_str       # Intel MKL
+    os.environ["VECLIB_MAXIMUM_THREADS"] = n_str # macOS Accelerate/vecLib
+    os.environ["NUMEXPR_NUM_THREADS"] = n_str   # NumExpr
+    os.environ["BLIS_NUM_THREADS"] = n_str      # BLIS (used by NumPy sometimes)
+
+    # Try to call OpenMP runtime directly if loaded
+    try:
+        omp = ctypes.CDLL("libgomp.so.1")  # GNU OpenMP (Linux)
+        omp.omp_set_num_threads(n_threads)
+    except Exception:
+        try:
+            omp = ctypes.CDLL("libomp.dylib")  # LLVM OpenMP (macOS)
+            omp.omp_set_num_threads(n_threads)
+        except Exception:
+            pass  # not available — fine, env vars will handle it
+
+    return n_threads
 
 def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     """
@@ -61,9 +91,7 @@ def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     Returns:
         None
     """
-    # Set the number of threads to 1 to avoid issues with torch multiprocessing
-    torch.set_num_threads(1)
-
+    limit_cpu_threads(1)
     # Make and cd into a batch folder to run calculations in
     batch = input_list[0]["batch"]
     os.system("mkdir batch_" + str(batch))

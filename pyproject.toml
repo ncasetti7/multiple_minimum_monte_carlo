@@ -8,7 +8,6 @@ dependencies = [
     "ase",
     "rdkit",
     "scipy",
-    "torch",
 ]
 
 authors = [ { name = "Nicholas Casetti" } ]

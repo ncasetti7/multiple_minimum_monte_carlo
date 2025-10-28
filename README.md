@@ -14,19 +14,19 @@ pip install multiple-minimum-monte-carlo
 
 ### Tutorial
 
-To run a search, you need to initialize Conformer, Calculation, and ConformerEnsemble objects. Conformer objects require either an input xyz or SMILES string. The default Calculation object is ASEOptimization which requires an ASE optimization routine (like FIRE) and an ASE calculator (the example below uses the xtb calculator which will need to be installed separately from this package). ConformerEnsemble objects require a Conformer and Calculation object.
+To run a search, you need to initialize Conformer, Calculation, and ConformerEnsemble objects. Conformer objects require either an input xyz or SMILES string. The default Calculation object is ASEOptimization which requires an ASE optimization routine (like FIRE) and an ASE calculator (the example below uses the aimnet calculator which will need to be installed separately from this package). ConformerEnsemble objects require a Conformer and Calculation object.
 
 ```python
 from ase.optimize.fire import FIRE
 from ase.io import write
-from xtb.ase.calculator import XTB
+from aimnet.calculators import AIMNet2ASE
 from multiple_minimum_monte_carlo.conformer import Conformer
 from multiple_minimum_monte_carlo.calculation import ASEOptimization
 from multiple_minimum_monte_carlo.conformer_ensemble import ConformerEnsemble
 
 smiles = "CC(=O)Oc1ccccc1C(=O)O"
 conformer = Conformer(smiles=smiles)
-optimizer = ASEOptimization(calc=XTB(method="gfn2-xtb"), optimizer=FIRE)
+optimizer = ASEOptimization(calc=AIMNet2ASE(), optimizer=FIRE)
 conformer_ensemble = ConformerEnsemble(conformer=conformer, calc=optimizer)
 ```
 
@@ -50,4 +50,4 @@ To define a Calculation object, a class will need three function: init, run, and
 
 ### Planned future work
 
-Include support for batched optimization 
+Include support for batched optimization (parallel calculations currently supported)
