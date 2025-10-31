@@ -30,7 +30,6 @@ class ConformerEnsemble:
         max_bonds_rotate: Optional[int] = 3,
         max_attempts: Optional[int] = 1000,
         angle_step: Optional[float] = 30.0,
-        energy_threshold: Optional[float] = 1.0,
         rmsd_threshold: Optional[float] = 0.3,
         initial_optimization: Optional[bool] = True,
         random_walk: Optional[bool] = False,
@@ -71,7 +70,6 @@ class ConformerEnsemble:
         self.max_bonds_rotate = max_bonds_rotate
         self.max_attempts = max_attempts
         self.angle_step = angle_step
-        self.energy_threshold = energy_threshold
         self.rmsd_threshold = rmsd_threshold
         self.initial_optimization = initial_optimization
         self.random_walk = random_walk
@@ -159,7 +157,7 @@ class ConformerEnsemble:
             )
             # Reduce angle if reduce_angle true
             if self.reduce_angle:
-                if iter % self.reduce_angle_every == 0:
+                if current_iter % self.reduce_angle_every == 0:
                     self.angle_step = self.angle_step / self.reduce_angle_by
 
             # Sample a conformer, rotate its dihedrals, and optimize it (if parallel, do this num_cpus times)
@@ -221,7 +219,7 @@ class ConformerEnsemble:
             int: The selected conformer index.
         """
         if self.random_walk:
-            index = random.choices(used, k=1)[0]
+            index = random.choice(range(len(used)))
         else:
             index = np.argmin(np.array(used))
         return index
