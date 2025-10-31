@@ -50,10 +50,9 @@ class ConformerEnsemble:
                 energy_window (float, optional): Maximum energy window (in eV) above the minimum energy conformer to retain conformers. Default is 10.0.
                 max_bonds_rotate (int, optional): Maximum number of rotatable bonds to rotate in each step. Default is 3.
                 max_attempts (int, optional): Maximum number of times to try and rotate dihedrals per iteration. Default is 1000
-                angle_step (float, optional): Step size (in degrees) for bond rotation. Default is 30.0.
-                energy_threshold (float, optional): Energy threshold (in eV) for accepting new conformers. Default is 1.0.
+                angle_step (float, optional): Step size (in degrees) for bond rotation. Default is 30.0.W
                 rmsd_threshold (float, optional): RMSD threshold (in Å) for distinguishing unique conformers. Default is 0.3.
-                initial_optimziation (bool, optional): If True, perform a structure optimization before performin Monte Carlo. Default is True
+                initial_optimization (bool, optional): If True, perform a structure optimization before performin Monte Carlo. Default is True
                 random_walk (bool, optional): If True, use random walk for bond rotations. Default is False.
                 reduce_angle (bool, optional): If True, reduce angle step size during the search. Default is False.
                 reduce_angle_every (int, optional): The number of iterations between reducing angle step size. Default is 50 (only accessed when reduce_angle is True)
@@ -86,6 +85,8 @@ class ConformerEnsemble:
             self.num_cpus = 1
         if self.verbose:
             logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+        self.final_ensemble = []
+        self.final_energies = []
 
     def log_info(self, message: str) -> None:
         """
@@ -96,7 +97,7 @@ class ConformerEnsemble:
         if self.verbose:
             logging.info(message)
 
-    def run_monte_carlo(self) -> List[np.ndarray]:
+    def run_monte_carlo(self) -> None:
         """
         Runs a Monte Carlo search to generate a conformer ensemble by iteratively sampling, modifying, and optimizing molecular conformers.
         The method performs the following steps:
@@ -105,11 +106,6 @@ class ConformerEnsemble:
             3. Iteratively samples conformers, applies random dihedral rotations, and optimizes the resulting structures.
             4. Filters out high-energy and duplicate conformers.
             5. Sorts the ensemble by energy and returns the final set of unique, low-energy conformers.
-
-        Returns
-        -------
-        List[np.ndarray]
-            A list of np.ndarray objects representing the coordinates of the final ensemble of unique, optimized conformers.
         """
         # Run the initial optimization
         if self.initial_optimization:
@@ -206,7 +202,8 @@ class ConformerEnsemble:
             used = list(used)
             final_energies = list(final_energies)
 
-        return final_ensemble
+        self.final_ensemble = final_ensemble
+        self.final_energies = final_energies
 
     def sample_conformer(self, used: List[int]) -> int:
         """

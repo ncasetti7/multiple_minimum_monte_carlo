@@ -1,6 +1,6 @@
-""" "Module for handling cheminformatics tasks"""
+"""Module for handling cheminformatics tasks"""
 
-from typing import List, Tuple
+from typing import List, Tuple, Set
 import math
 import random
 from rdkit import Chem
@@ -82,7 +82,7 @@ def add_coords_to_mol(coords: np.array, mol: Chem.Mol) -> Chem.Mol:
     return mol
 
 
-def get_bonds(mol: Chem.Mol) -> List[Tuple]:
+def get_bonds(mol: Chem.Mol) -> Set[Tuple[int, int]]:
     """
     Get the bond strings of a molecule.
 
@@ -234,7 +234,6 @@ def get_metal_atoms(mol: Chem.Mol) -> List[int]:
         "Rb",
         "Ru",
         "Sc",
-        "Ag",
         "Na",
         "Sr",
         "Ta",

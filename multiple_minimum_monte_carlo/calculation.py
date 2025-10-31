@@ -32,8 +32,8 @@ class ASEOptimization(Calculation):
         calc: ase.calculators.calculator.Calculator,
         optimizer: Optional[ase.optimize.optimize.Optimizer] = BFGS,
         fmax: Optional[float] = 0.01,
-        max_cycles: Optional[float] = 1000,
-        verbose: Optional[float] = False,
+        max_cycles: Optional[int] = 1000,
+        verbose: Optional[bool] = False,
     ) -> None:
         self.calc = calc
         self.optimizer = optimizer
@@ -53,6 +53,7 @@ class ASEOptimization(Calculation):
 
         Returns:
             atoms (ase.Atoms): Optimized ASE atoms object.
+            energy (float): Energy of the optimized atoms object.
         """
         atoms.calc = self.calc
         if len(constrained_atoms) > 0:
