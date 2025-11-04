@@ -1,8 +1,12 @@
 import pytest
+
 pytest.importorskip("rdkit")
 from rdkit import Chem
 
-from multiple_minimum_monte_carlo.conformer_ensemble import ConformerEnsemble, run_class_func
+from multiple_minimum_monte_carlo.conformer_ensemble import (
+    ConformerEnsemble,
+    run_class_func,
+)
 from multiple_minimum_monte_carlo.conformer import Conformer
 
 
@@ -21,9 +25,12 @@ def make_dummy_conformer(monkeypatch):
         class MinimalAtoms:
             def __init__(self):
                 self.info = {}
+
             def get_positions(self):
                 return []
+
         self.atoms = MinimalAtoms()
+
     try:
         # if a pytest monkeypatch fixture is provided
         monkeypatch.setattr(Conformer, "generate_conformer", fake_generate)
@@ -42,7 +49,9 @@ def test_sample_conformer_minimum():
     c = make_dummy_conformer(None)
     ensemble = ConformerEnsemble(c, calc=None, num_iterations=1, parallel=False)
     # when used is [0,0,0], argmin is 0
-    assert ensemble.sample_conformer([1, 2, 3]) == 0 or isinstance(ensemble.sample_conformer([1,2,3]), int)
+    assert ensemble.sample_conformer([1, 2, 3]) == 0 or isinstance(
+        ensemble.sample_conformer([1, 2, 3]), int
+    )
 
 
 def test_constraint_test_detects_close_atoms(monkeypatch):

@@ -48,6 +48,7 @@ def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
 
     return batched_dicts
 
+
 def limit_cpu_threads(n_threads: int = 1):
     """
     Rough equivalent of torch.set_num_threads(n_threads)
@@ -57,14 +58,14 @@ def limit_cpu_threads(n_threads: int = 1):
     Call this before starting multiprocessing or heavy numeric code.
     """
     n_str = str(n_threads)
-    
+
     # Common math library environment variables
-    os.environ["OMP_NUM_THREADS"] = n_str       # OpenMP
+    os.environ["OMP_NUM_THREADS"] = n_str  # OpenMP
     os.environ["OPENBLAS_NUM_THREADS"] = n_str  # OpenBLAS
-    os.environ["MKL_NUM_THREADS"] = n_str       # Intel MKL
-    os.environ["VECLIB_MAXIMUM_THREADS"] = n_str # macOS Accelerate/vecLib
-    os.environ["NUMEXPR_NUM_THREADS"] = n_str   # NumExpr
-    os.environ["BLIS_NUM_THREADS"] = n_str      # BLIS (used by NumPy sometimes)
+    os.environ["MKL_NUM_THREADS"] = n_str  # Intel MKL
+    os.environ["VECLIB_MAXIMUM_THREADS"] = n_str  # macOS Accelerate/vecLib
+    os.environ["NUMEXPR_NUM_THREADS"] = n_str  # NumExpr
+    os.environ["BLIS_NUM_THREADS"] = n_str  # BLIS (used by NumPy sometimes)
 
     # Try to call OpenMP runtime directly if loaded
     try:
@@ -78,6 +79,7 @@ def limit_cpu_threads(n_threads: int = 1):
             pass  # not available — fine, env vars will handle it
 
     return n_threads
+
 
 def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     """

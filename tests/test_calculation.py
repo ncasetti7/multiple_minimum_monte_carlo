@@ -3,6 +3,7 @@ import numpy as np
 
 EV_TO_KCAL = 23.0605
 
+
 class DummyCalc:
     def __init__(self, energy=1.23):
         self._energy = energy
@@ -25,6 +26,7 @@ class DummyAtoms:
         # return a dummy positions array compatible with ASE
         return np.zeros((1, 3))
 
+
 def test_energy_returns_calculator_energy():
     atoms = DummyAtoms()
     calc = DummyCalc(4.56)
@@ -36,6 +38,7 @@ def test_energy_returns_calculator_energy():
 def test_run_applies_constraints_and_returns_tuple():
     atoms = DummyAtoms()
     calc = DummyCalc(7.89)
+
     # Provide a dummy optimizer that accepts atoms and has run()
     class DummyOpt:
         def __init__(self, atoms):
