@@ -56,11 +56,16 @@ def test_identity_checks(tmp_path):
     Chem.AllChem.EmbedMolecule(mol)
     atoms = cheminformatics.mol_to_ase_atoms(mol)
 
-    original_bonds, metal_atoms, halides = cheminformatics.initialize_mc_identity_check(atoms, mol)
+    original_bonds, metal_atoms, halides = cheminformatics.initialize_mc_identity_check(
+        atoms, mol
+    )
     # returned types
     assert isinstance(original_bonds, list)
     assert isinstance(metal_atoms, list)
     assert isinstance(halides, list)
 
     # check_identity_mc on same atoms should be True
-    assert cheminformatics.check_identity_mc(original_bonds, metal_atoms, halides, atoms) is True
+    assert (
+        cheminformatics.check_identity_mc(original_bonds, metal_atoms, halides, atoms)
+        is True
+    )

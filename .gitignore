@@ -10,4 +10,6 @@
 # Extra cache/environment folder
 .pytest_cache/
 .venv/
-dist/
+dist/# pixi environments
+.pixi/*
+!.pixi/config.toml

@@ -181,9 +181,21 @@ class ConformerEnsemble:
                     )
             if len(calculation_input) == 0:
                 continue
-            positions_and_energies = multiproc.parallel_run_proc(
-                run_class_func, calculation_input, self.num_cpus
-            )
+
+            if self.parallel:
+                positions_and_energies = multiproc.parallel_run_proc(
+                    run_class_func, calculation_input, self.num_cpus
+                )
+            else:
+                # Run serially without multiprocessing
+                positions_and_energies = []
+                for calc_dict in calculation_input:
+                    result = run_class_func(
+                        calc_dict["cls"],
+                        calc_dict["func_name"],
+                        calc_dict["args"],
+                    )
+                    positions_and_energies.append(result)
 
             # Filter out high energy and duplicate conformers
             for positions, energy in positions_and_energies:
