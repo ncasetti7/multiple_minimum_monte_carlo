@@ -1,6 +1,6 @@
 [project]
 name = "multiple-minimum-monte-carlo"
-version = "0.0.6"
+version = "0.0.7"
 description = "Open source implementation of multiple minimum Monte Carlo"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -8,6 +8,7 @@ dependencies = [
     "ase",
     "rdkit",
     "scipy",
+    "torch>=2.5.1",
 ]
 
 authors = [ { name = "Nicholas Casetti" } ]

@@ -18,7 +18,7 @@ class Calculation:
         pass
 
     def run(
-        self, atoms: ase.Atoms, constrained_atoms: Optional[List[int]] = []
+        self, atoms: ase.Atoms, constrained_atoms: Optional[List[int]] = None
     ) -> Tuple[np.ndarray, float]:
         pass
 
@@ -42,7 +42,7 @@ class ASEOptimization(Calculation):
         self.verbose = verbose
 
     def run(
-        self, atoms: ase.Atoms, constrained_atoms: Optional[List[int]] = []
+        self, atoms: ase.Atoms, constrained_atoms: Optional[List[int]] = None
     ) -> Tuple[ase.Atoms, float]:
         """
         Perform constrained optimization using ASE.
@@ -56,7 +56,7 @@ class ASEOptimization(Calculation):
             energy (float): Energy of the optimized atoms object.
         """
         atoms.calc = self.calc
-        if len(constrained_atoms) > 0:
+        if constrained_atoms is not None and len(constrained_atoms) > 0:
             atoms.set_constraint(FixAtoms(constrained_atoms))
         # Perform optimization
         if self.verbose:

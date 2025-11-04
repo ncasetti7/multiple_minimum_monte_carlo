@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 import random
 from copy import copy
 import logging
@@ -10,8 +10,10 @@ import numpy as np
 from scipy.spatial import distance_matrix
 from rdkit import Chem
 from rdkit.Chem import PeriodicTable, rdMolAlign
+import ase
 from multiple_minimum_monte_carlo.conformer import Conformer
 from multiple_minimum_monte_carlo.calculation import Calculation
+from multiple_minimum_monte_carlo.batch_calculation import BatchCalculation
 from multiple_minimum_monte_carlo import cheminformatics, multiproc
 
 
@@ -24,7 +26,7 @@ class ConformerEnsemble:
     def __init__(
         self,
         conformer: Conformer,
-        calc: Calculation,
+        calc: Union[Calculation, BatchCalculation],
         num_iterations: Optional[int] = 100,
         energy_window: Optional[float] = 10.0,
         max_bonds_rotate: Optional[int] = 3,
@@ -39,6 +41,7 @@ class ConformerEnsemble:
         only_heavy: Optional[bool] = False,
         parallel: Optional[bool] = False,
         num_cpus: Optional[int] = 0,
+        batch_size: Optional[int] = 10,
         verbose: Optional[bool] = False,
     ) -> None:
         """
@@ -60,6 +63,7 @@ class ConformerEnsemble:
                 only_heavy (bool, optional): If True, only rotate dihedrals associated with heavy atoms
                 parallel (bool, optional): If True, perform calculations in parallel. Default is False
                 num_cpus (int, optional): Number of CPUs to use for parallel calculations. If 0, use all available CPUs. Default is 0.
+                batch_size (int, optional): Number of conformers to process in each batch. Default is 10.
                 verbose (bool, optional): Whether to log Monte Carlo progress
         """
         self.conformer = conformer
@@ -78,15 +82,18 @@ class ConformerEnsemble:
         self.only_heavy = only_heavy
         self.parallel = parallel
         self.num_cpus = num_cpus
+        self.batch = isinstance(self.calc, BatchCalculation)
+        self.batch_size = batch_size
         self.verbose = verbose
         if self.num_cpus == 0:
             self.num_cpus = os.cpu_count()
-        if not self.parallel:
-            self.num_cpus = 1
         if self.verbose:
             logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         self.final_ensemble = []
         self.final_energies = []
+        if self.parallel and self.batch:
+            self.parallel = False
+            self.log_warning("Parallel calculations not supported with batch calculations")
 
     def log_info(self, message: str) -> None:
         """
@@ -96,6 +103,15 @@ class ConformerEnsemble:
         """
         if self.verbose:
             logging.info(message)
+
+    def log_warning(self, message: str) -> None:
+        """
+        Logs a warning message
+        Args:
+            message (str): Message to log
+        """
+        if self.verbose:
+            logging.warning(message)
 
     def run_monte_carlo(self) -> None:
         """
@@ -110,12 +126,15 @@ class ConformerEnsemble:
         # Run the initial optimization
         if self.initial_optimization:
             self.log_info("Running intitial optimization")
-            positions, energy = self.calc.run(
-                self.conformer.atoms, self.conformer.constrained_atoms
-            )
-            self.conformer.atoms.positions = positions
+            positions_and_energies = self.run_optimizations([self.conformer.atoms])
+            self.conformer.atoms.positions = positions_and_energies[0][0]
+            energy = positions_and_energies[0][1]
         else:
-            energy = self.calc.energy(self.conformer.atoms)
+            if self.batch:
+                energies = self.calc.energy([self.conformer.atoms])
+                energy = energies[0]
+            else:
+                energy = self.calc.energy(self.conformer.atoms)
         # Get the dihedrals to rotate
         dihedrals = cheminformatics.get_dihedral_matches(
             self.conformer.mol, self.only_heavy
@@ -125,7 +144,7 @@ class ConformerEnsemble:
         # Remove any dihedrals associated with constrained atoms
         final_dihedrals = []
         for dihedral in dihedrals:
-            if (
+            if self.conformer.constrained_atoms is not None and (
                 dihedral[1] in self.conformer.constrained_atoms
                 and dihedral[2] in self.conformer.constrained_atoms
             ):
@@ -147,6 +166,11 @@ class ConformerEnsemble:
         final_energies = [energy]
         used = [0]
         current_iter = 0
+        samples_per_batch = 1
+        if self.batch:
+            samples_per_batch = self.batch_size
+        elif self.parallel:
+            samples_per_batch = self.num_cpus
         while current_iter < self.num_iterations:
             self.log_info(
                 f"Iteration: {current_iter} Current min energy: {min(final_energies)}"
@@ -158,7 +182,7 @@ class ConformerEnsemble:
 
             # Sample a conformer, rotate its dihedrals, and optimize it (if parallel, do this num_cpus times)
             calculation_input = []
-            for _ in range(self.num_cpus):
+            for _ in range(samples_per_batch):
                 current_iter += 1
                 success = False
                 index = self.sample_conformer(used)
@@ -169,22 +193,10 @@ class ConformerEnsemble:
                     used[index] += 1
                     atoms_to_optimize = copy(self.conformer.atoms)
                     atoms_to_optimize.set_positions(positions)
-                    calculation_input.append(
-                        {
-                            "cls": self.calc,
-                            "func_name": "run",
-                            "args": {
-                                "atoms": atoms_to_optimize,
-                                "constrained_atoms": self.conformer.constrained_atoms,
-                            },
-                        }
-                    )
+                    calculation_input.append(atoms_to_optimize)
             if len(calculation_input) == 0:
                 continue
-            positions_and_energies = multiproc.parallel_run_proc(
-                run_class_func, calculation_input, self.num_cpus
-            )
-
+            positions_and_energies = self.run_optimizations(calculation_input)
             # Filter out high energy and duplicate conformers
             for positions, energy in positions_and_energies:
                 if self.check_conformer(
@@ -204,6 +216,50 @@ class ConformerEnsemble:
 
         self.final_ensemble = final_ensemble
         self.final_energies = final_energies
+
+    def run_optimizations(self, atoms_list: List[ase.Atoms]) -> List[Tuple[np.ndarray, float]]:
+        """
+        Runs optimizations on a list of ASE Atoms objects using the provided calculation method.
+        Args:
+            atoms_list (List[ase.Atoms]): List of ASE Atoms objects to optimize.
+        Returns:
+            List[Tuple[np.ndarray, float]]: List of tuples containing optimized positions and energies.
+        """
+        if self.parallel:
+            calculation_input = []
+            for atoms in atoms_list:
+                calculation_input.append(
+                    {
+                        "cls": self.calc,
+                        "func_name": "run",
+                        "args": {
+                            "atoms": atoms,
+                            "constrained_atoms": self.conformer.constrained_atoms,
+                        },
+                    }
+                )
+            workers = min(self.num_cpus, len(calculation_input))
+            results = multiproc.parallel_run_proc(
+                run_class_func, calculation_input, workers
+            )
+        elif self.batch:
+            if self.conformer.constrained_atoms is not None:
+                constrained_atoms = [self.conformer.constrained_atoms] * len(atoms_list)
+            else:
+                constrained_atoms = None
+            positions_list, energies = self.calc.run(
+                atoms_list=atoms_list,
+                constrained_atoms_list=constrained_atoms,
+            )
+            results = list(zip(positions_list, energies))
+        else:
+            results = []
+            for atoms in atoms_list:
+                positions, energy = self.calc.run(
+                    atoms, self.conformer.constrained_atoms
+                )
+                results.append((positions, energy))
+        return results
 
     def sample_conformer(self, used: List[int]) -> int:
         """

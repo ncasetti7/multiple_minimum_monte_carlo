@@ -15,7 +15,7 @@ class Conformer:
         input_xyz: Optional[str] = None,
         charge: Optional[int] = None,
         spin: Optional[int] = 1,
-        constrained_atoms: Optional[List[int]] = [],
+        constrained_atoms: Optional[List[int]] = None,
     ) -> None:
         """
         Initializes a conformer object from a SMILES string, with optional atom mapping, input coordinates, and constrained atoms.
