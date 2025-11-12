@@ -50,7 +50,7 @@ class ConformerEnsemble:
                 conformer (Conformer): The initial conformer structure to start the ensemble generation.
                 calc (Calculation): A calculation object to perform energy minimizations
                 num_iterations (int, optional): Number of Monte Carlo iterations to perform. Default is 100.
-                energy_window (float, optional): Maximum energy window (in eV) above the minimum energy conformer to retain conformers. Default is 10.0.
+                energy_window (float, optional): Maximum energy window (in kcal/mol) above the minimum energy conformer to retain conformers. Default is 10.0.
                 max_bonds_rotate (int, optional): Maximum number of rotatable bonds to rotate in each step. Default is 3.
                 max_attempts (int, optional): Maximum number of times to try and rotate dihedrals per iteration. Default is 1000
                 angle_step (float, optional): Step size (in degrees) for bond rotation. Default is 30.0.W
