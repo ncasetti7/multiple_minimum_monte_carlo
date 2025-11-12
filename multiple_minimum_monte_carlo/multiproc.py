@@ -49,7 +49,6 @@ def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
     return batched_dicts
 
 
-
 def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     """
     Run a function in parallel with a list of arguments and puts the results in a queue. Do this in a directory named from the batch number

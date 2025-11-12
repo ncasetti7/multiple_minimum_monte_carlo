@@ -60,6 +60,10 @@ conformer_ensemble = ConformerEnsemble(conformer=conformer, calc=calc)
 
 As opposed to batched calculations, you can also do calculations in parallel with a Calculation object by setting parallel=True in the ConformerEnsemble object. However, this requires that the multiprocessing start method "fork" is used which may be incompatible with certain workflows.
 
+### A note about just using input xyz structure
+
+When you only include an input xyz structure, this code uses rdkit to construct the SMILES string. However, occassionally this will fail (i.e. when the structure is more ambiguous like a transition state). In this case, including the SMILES string will fix this issue, but the SMILES string needs to be mapped to the structure. The easiest way to do this is to use an atom-mapped SMILES string (the hydrogens also need to be mapped!) and set mapped=True in your Conformer object
+
 ### User-Defined Calculation
 
 To define a Calculation object, a class will need three function: init, run, and energy. init initializes the class with whatever information is necessary. run performs an optimization. It takes an ase.Atoms object and a list of atoms to constrain and returns an np array of cartesian coordinates (in angstroms) and a float with the energy of the conformation (in kcal/mol). energy calculates the energy of a conformer. It takes an ase.Atoms object and returns a float the with energy (in kcal/mol)

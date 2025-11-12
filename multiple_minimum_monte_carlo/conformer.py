@@ -55,6 +55,7 @@ class Conformer:
             self.atoms = read(input_xyz)
         else:
             self.atoms = read(input_xyz)
+            self.add_xyz_to_mol()
 
         if self.charge is None:
             self.charge = Chem.GetFormalCharge(self.mol)
@@ -70,7 +71,7 @@ class Conformer:
         AllChem.UFFOptimizeMolecule(self.mol)
         self.atoms = cheminformatics.mol_to_ase_atoms(self.mol)
 
-    def mol_from_xyz(self) -> Chem.Mol:
+    def mol_from_xyz(self) -> None:
         """
         Generate an rdkit mol from an xyz file
         """
@@ -79,3 +80,11 @@ class Conformer:
         rdDetermineBonds.DetermineBonds(mol, charge=self.charge)
         self.mol = mol
         self.smiles = Chem.MolToSmiles(mol)
+
+    def add_xyz_to_mol(self) -> None:
+        """
+        Add coordinates from an xyz file to the rdkit mol
+        """
+        raw_mol = Chem.MolFromXYZFile(self.input_xyz)
+        conf = raw_mol.GetConformer()
+        self.mol.AddConformer(conf, assignId=True)

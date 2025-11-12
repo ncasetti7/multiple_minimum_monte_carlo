@@ -93,7 +93,9 @@ class ConformerEnsemble:
         self.final_energies = []
         if self.parallel and self.batch:
             self.parallel = False
-            self.log_warning("Parallel calculations not supported with batch calculations")
+            self.log_warning(
+                "Parallel calculations not supported with batch calculations"
+            )
 
     def log_info(self, message: str) -> None:
         """
@@ -217,7 +219,9 @@ class ConformerEnsemble:
         self.final_ensemble = final_ensemble
         self.final_energies = final_energies
 
-    def run_optimizations(self, atoms_list: List[ase.Atoms]) -> List[Tuple[np.ndarray, float]]:
+    def run_optimizations(
+        self, atoms_list: List[ase.Atoms]
+    ) -> List[Tuple[np.ndarray, float]]:
         """
         Runs optimizations on a list of ASE Atoms objects using the provided calculation method.
         Args:
