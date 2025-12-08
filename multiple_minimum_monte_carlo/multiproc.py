@@ -104,7 +104,10 @@ def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     finally:
         # Change directory back to the original directory and remove the batch folder
         # Use absolute path to return - avoids stale file handle on ".."
-        os.chdir(original_dir)
+        try:
+            os.chdir(original_dir)
+        except OSError:
+            pass  # Original directory may no longer exist
         shutil.rmtree(batch_dir, ignore_errors=True)
 
     final_dict = {batch: results}
