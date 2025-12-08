@@ -87,13 +87,14 @@ def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     batch_dir = temp_base / f"mmmc_batch_{batch}_{os.getpid()}"
     batch_dir.mkdir(parents=True, exist_ok=True)
 
+    results = []
     try:
         os.chdir(batch_dir)
         # Run the function on each input dictionary
         # Remove the batch number from the input dictionary
         for input_dict in input_list:
             del input_dict["batch"]
-        results = []
+
         for input_dict in input_list:
             try:
                 result = func(**input_dict)
