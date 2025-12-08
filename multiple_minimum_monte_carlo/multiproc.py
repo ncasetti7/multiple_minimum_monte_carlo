@@ -49,6 +49,20 @@ def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
     return batched_dicts
 
 
+def _get_temp_base_dir() -> Path:
+    """Get the best temporary directory: TMPDIR > /tmp > cwd."""
+    if tmpdir := os.environ.get('TMPDIR'):
+        tmp_path = Path(tmpdir)
+        if tmp_path.exists() and tmp_path.is_dir():
+            return tmp_path
+
+    tmp_path = Path('/tmp')
+    if tmp_path.exists() and tmp_path.is_dir():
+        return tmp_path
+
+    return Path.cwd()
+
+
 def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     """
     Run a function in parallel with a list of arguments and puts the results in a queue. Do this in a directory named from the batch number
