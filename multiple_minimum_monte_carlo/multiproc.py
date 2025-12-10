@@ -1,10 +1,12 @@
 """Module for running functions in parallel on a single node"""
 
 import os
+import shutil
 from typing import List, Dict, Callable
 import torch.multiprocessing as mp
 import math
 import torch
+from pathlib import Path
 
 
 def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
@@ -49,6 +51,20 @@ def batch_dicts(dicts: List[Dict], num_workers: int) -> List[List[Dict]]:
     return batched_dicts
 
 
+def _get_temp_base_dir() -> Path:
+    """Get the best temporary directory: TMPDIR > /tmp > cwd."""
+    if tmpdir := os.environ.get('TMPDIR'):
+        tmp_path = Path(tmpdir)
+        if tmp_path.exists() and tmp_path.is_dir():
+            return tmp_path
+
+    tmp_path = Path('/tmp')
+    if tmp_path.exists() and tmp_path.is_dir():
+        return tmp_path
+
+    return Path.cwd()
+
+
 def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     """
     Run a function in parallel with a list of arguments and puts the results in a queue. Do this in a directory named from the batch number
@@ -64,27 +80,37 @@ def run_func(func: Callable, input_list: List[Dict], queue: mp.Queue) -> None:
     torch.set_num_threads(1)
     # Make and cd into a batch folder to run calculations in
     batch = input_list[0]["batch"]
-    os.system("mkdir batch_" + str(batch))
-    os.chdir("batch_" + str(batch))
+    original_dir = Path.cwd().resolve()
+    # Use local temp directory (TMPDIR or /tmp) if available
+    temp_base = _get_temp_base_dir()
 
-    # Run the function on each input dictionary
-    # Remove the batch number from the input dictionary
-    for input_dict in input_list:
-        del input_dict["batch"]
+    batch_dir = temp_base / f"mmmc_batch_{batch}_{os.getpid()}"
+    batch_dir.mkdir(parents=True, exist_ok=True)
+
     results = []
-    for input_dict in input_list:
+    try:
+        os.chdir(batch_dir)
+        # Run the function on each input dictionary
+        # Remove the batch number from the input dictionary
+        for input_dict in input_list:
+            del input_dict["batch"]
+
+        for input_dict in input_list:
+            try:
+                result = func(**input_dict)
+            except Exception as e:
+                print("Error in batch", batch, ":", e)
+                continue
+            results.append(result)
+    finally:
+        # Change directory back to the original directory and remove the batch folder
+        # Use absolute path to return - avoids stale file handle on ".."
         try:
-            result = func(**input_dict)
-        except Exception as e:
-            print("Error in batch", batch, ":", e)
-            continue
-        results.append(result)
+            os.chdir(original_dir)
+        except OSError:
+            pass  # Original directory may no longer exist
+        shutil.rmtree(batch_dir, ignore_errors=True)
 
-    # Change directory back to the original directory and remove the batch folder
-    os.chdir("..")
-    os.system("rm -r batch_" + str(batch))
-
-    # Put the results in the queue
     final_dict = {batch: results}
     queue.put_nowait(final_dict)
 
