@@ -1,6 +1,6 @@
 [project]
 name = "multiple-minimum-monte-carlo"
-version = "0.0.9"
+version = "0.0.10"
 description = "Open source implementation of multiple minimum Monte Carlo"
 readme = "README.md"
 requires-python = ">=3.8"
